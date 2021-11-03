@@ -3,8 +3,8 @@ import { errorTypes } from '.';
 import {
   ADAPTIVE_CARD_URL,
   DEVX_API_URL,
+  GRAPH_API_SANDBOX_ENDPOINT_URL,
   GRAPH_API_SANDBOX_URL,
-  GRAPH_TOOOLKIT_EXAMPLE_URL,
   GRAPH_URL,
   HOME_ACCOUNT_KEY
 } from '../app/services/graph-constants';
@@ -12,7 +12,6 @@ import {
   sanitizeGraphAPISandboxUrl,
   sanitizeQueryUrl
 } from '../app/utils/query-url-sanitization';
-import { store } from '../store';
 
 export function filterTelemetryTypes(envelope: ITelemetryItem) {
   const baseType = envelope.baseType || '';
@@ -21,7 +20,7 @@ export function filterTelemetryTypes(envelope: ITelemetryItem) {
     'MetricData',
     'PageviewData',
     'ExceptionData',
-    'RemoteDependencyData'
+    'RemoteDependencyData',
   ];
   return telemetryTypesToInclude.includes(baseType);
 }
@@ -29,18 +28,13 @@ export function filterTelemetryTypes(envelope: ITelemetryItem) {
 export function filterRemoteDependencyData(envelope: ITelemetryItem): boolean {
   if (envelope.baseType === 'RemoteDependencyData') {
     const baseData = envelope.baseData || {};
-
     const urlObject = new URL(baseData.target || '');
 
-    const graphProxyUrl = store.getState()?.proxyUrl;
-
     const targetsToInclude = [
-      GRAPH_URL,
+      GRAPH_URL, DEVX_API_URL, GRAPH_API_SANDBOX_URL, GRAPH_API_SANDBOX_ENDPOINT_URL,
       DEVX_API_URL,
-      GRAPH_API_SANDBOX_URL,
-      new URL(graphProxyUrl).origin,
+      new URL(GRAPH_API_SANDBOX_URL).origin,
       new URL(ADAPTIVE_CARD_URL).origin,
-      new URL(GRAPH_TOOOLKIT_EXAMPLE_URL).origin
     ];
     if (!targetsToInclude.includes(urlObject.origin)) {
       return false;
@@ -71,10 +65,6 @@ export function addCommonTelemetryItemProperties(envelope: ITelemetryItem) {
   const accessTokenKey = HOME_ACCOUNT_KEY;
   const accessToken = localStorage.getItem(accessTokenKey);
   telemetryItem.properties.IsAuthenticated = !!accessToken;
-
-  // Capture GE Mode for all telemetry items
-  const geMode = store.getState()?.graphExplorerMode;
-  telemetryItem.properties.GraphExplorerMode = geMode;
 
   return true;
 }
@@ -114,6 +104,8 @@ export function sanitizeStackTrace(envelope: ITelemetryItem) {
 
       exception.hasFullStack = false;
       exception.stack = null;
+      exception.parsedStack = [parsedStack];
+      telemetryItem.exceptions = [exception];
     }
   }
   return true;

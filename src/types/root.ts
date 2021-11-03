@@ -23,11 +23,7 @@ export interface IRootState {
   termsOfUse: boolean;
   sidebarProperties: ISidebarProps;
   authToken: IAuthenticateResult;
-  samples: {
-    queries: ISampleQuery[];
-    pending: boolean;
-    error: string | null;
-  };
+  samples: ISampleQuery[];
   consentedScopes: string[];
   scopes: IScopes;
   history: IHistoryItem[];
